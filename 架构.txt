@@ -1,0 +1,42 @@
+项目目录结构：
+apps:   应用目录，记录相关服务信息
+- user:
+    - api:
+    - rpc:
+- im
+deploy          项目部署相关信息 sql or dockerfile
+pkg
+docker-compose.yaml
+Makefile      编译脚本
+
+网关的作用：
+1.反向代理、负载均衡
+2.请求转发，根据不同的请求路径、请求头转发到不同的后端服务
+3.支持不同的协议转换  http到websocket、grpc
+4.认证、授权
+5.熔断、限流、重试
+
+项目三大业务
+用户：
+    登入、注册、详情、查找
+社交【好友、群】：
+    好友：好友添加、好友列表
+    群：进群、退群、列表
+聊天：
+    私聊、群聊、聊天记录等
+
+基础环境：
+机器：
+    虚拟机：192.168.8.100
+代码仓库：
+    github托管
+镜像仓库：
+   阿里云个人镜像仓库
+   docker pull xxx 时根据是否指定仓库地址决定从私有仓库还是公共仓库拉取镜像
+
+chmod 777 -R ./components  递归给目录赋予权限
+docker run -d --name xxx --restart=always  nginx:latest   指定容器自动重启
+docker update --restart=always xxx      更新容器为自动重启
+
+md5加密：不加盐的单向hash，不可逆，同一个密码经过hash后生成同一个hash值(32位)，加密速度快
+bcrypt加密：加盐、加cost的单向hash，不可逆，同一密码每次加密后生成的值都不一样(60位)，加密速度慢
