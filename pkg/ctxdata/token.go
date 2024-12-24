@@ -6,6 +6,7 @@ import (
 
 const Identify = "imooc.com"
 
+// 生成jwt token
 func GetJwtToken(secret string, iat, seconds int64, uid string) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["exp"] = iat + seconds

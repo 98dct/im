@@ -1,7 +1,7 @@
 need_start_server=(
   user-rpc-test.sh
 )
-  
+
 for i in ${need_start_server[*]} ; do
     chmod +x $i
     ./$i
