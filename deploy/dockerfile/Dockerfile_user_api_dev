@@ -4,11 +4,8 @@ FROM alpine:latest
 
 ENV TZ=Asia/Shanghai
 
-# 要添加这个包，否则不会识别数据库时区配置 time zone Asia/Shanghai
-RUN apk update && apk add tzdata
-
 ARG SERVER_NAME=user
-ARG SERVER_TYPE=rpc
+ARG SERVER_TYPE=api
 
 ENV RUN_BIN bin/${SERVER_NAME}-${SERVER_TYPE}
 ENV RUN_CONF /${SERVER_NAME}/conf/${SERVER_NAME}.yaml
