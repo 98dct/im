@@ -1,13 +1,13 @@
 package conversation
 
 import (
-	"context"
 	"github.com/mitchellh/mapstructure"
-	"im/apps/im/ws/internal/logic"
 	"im/apps/im/ws/internal/svc"
 	"im/apps/im/ws/websocket"
 	"im/apps/im/ws/ws"
+	"im/apps/task/mq/mq"
 	"im/pkg/constants"
+	"im/pkg/wuid"
 	"time"
 )
 
@@ -21,21 +21,39 @@ func Chat(svc *svc.ServiceContext) websocket.HandlerFunc {
 		}
 
 		switch data.ChatType {
-		case constants.SingleCHatType:
-			err := logic.NewConversation(context.Background(), srv, svc).SingleChat(&data, conn.Uid)
-			if err != nil {
-				srv.Send(websocket.NewErrMsg(err), conn)
-				return
+		case constants.SingleChatType:
+
+			if data.ConversationId == "" {
+				data.ConversationId = wuid.CombineId(conn.Uid, data.RecvId)
 			}
 
-			srv.SendByUserId(websocket.NewMsg(conn.Uid, ws.Chat{
+			err := svc.MsgChatTransferClient.Push(&mq.MsgChatTransfer{
 				ConversationId: data.ConversationId,
 				ChatType:       data.ChatType,
 				SendId:         conn.Uid,
 				RecvId:         data.RecvId,
-				Msg:            data.Msg,
 				SendTime:       time.Now().UnixNano(),
-			}), data.RecvId)
+				MType:          data.MType,
+				Content:        data.Content,
+			})
+			if err != nil {
+				srv.Send(websocket.NewErrMsg(err), conn)
+				return
+			}
+			//err := logic.NewConversation(context.Background(), srv, svc).SingleChat(&data, conn.Uid)
+			//if err != nil {
+			//	srv.Send(websocket.NewErrMsg(err), conn)
+			//	return
+			//}
+			//
+			//srv.SendByUserId(websocket.NewMsg(conn.Uid, ws.Chat{
+			//	ConversationId: data.ConversationId,
+			//	ChatType:       data.ChatType,
+			//	SendId:         conn.Uid,
+			//	RecvId:         data.RecvId,
+			//	Msg:            data.Msg,
+			//	SendTime:       time.Now().UnixNano(),
+			//}), data.RecvId)
 		case constants.GroupChatType:
 
 		}

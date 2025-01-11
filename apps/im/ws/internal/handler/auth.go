@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/token"
@@ -28,10 +29,12 @@ func (j *JwtAuth) Auth(w http.ResponseWriter, r *http.Request) bool {
 	//TODO implement me
 	token, err := j.parser.ParseToken(r, j.svc.Config.JwtAuth.AccessSecret, "")
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
 	if !token.Valid {
+		fmt.Println("token is not valid!")
 		return false
 	}
 

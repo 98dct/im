@@ -53,7 +53,7 @@ func (s *Server) ServeWs(w http.ResponseWriter, r *http.Request) {
 
 	// 鉴权
 	if !s.serverOption.Authentication.Auth(w, r) {
-		s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不具备访问权限！")})
+		s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不具备访问权限！")}, conn)
 		s.Close(conn)
 		return
 	}

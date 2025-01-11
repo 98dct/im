@@ -10,5 +10,5 @@ type ChatType int
 
 const (
 	GroupChatType ChatType = iota + 1
-	SingleCHatType
+	SingleChatType
 )
