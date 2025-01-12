@@ -4,6 +4,10 @@ import "time"
 
 type serverOption struct {
 	Authentication
+
+	ack        AckType
+	ackTimeout time.Duration
+
 	pattern     string
 	MaxIdleTime time.Duration
 }
@@ -15,6 +19,7 @@ func newServerOption(opts ...ServerOption) serverOption {
 		Authentication: new(authentication),
 		pattern:        "/ws",
 		MaxIdleTime:    defaultMaxIdleTime,
+		ackTimeout:     defaultAckTimeout,
 	}
 
 	for _, opt := range opts {
@@ -27,6 +32,12 @@ func newServerOption(opts ...ServerOption) serverOption {
 func WithServerAuthentication(authentication Authentication) ServerOption {
 	return func(option *serverOption) {
 		option.Authentication = authentication
+	}
+}
+
+func WithServerAck(ack AckType) ServerOption {
+	return func(option *serverOption) {
+		option.ack = ack
 	}
 }
 
@@ -43,5 +54,15 @@ func WithServerMaxIdleTime(maxIdleTime time.Duration) ServerOption {
 			return
 		}
 		option.MaxIdleTime = maxIdleTime
+	}
+}
+
+func WithAckTimeout(ackTimeout time.Duration) ServerOption {
+	return func(option *serverOption) {
+		if ackTimeout < 0 {
+			return
+		}
+
+		option.ackTimeout = ackTimeout
 	}
 }

@@ -7,4 +7,5 @@ import (
 
 const (
 	defaultMaxIdleTime = time.Duration(math.MaxInt64)
+	defaultAckTimeout  = 90 * time.Second
 )

@@ -12,6 +12,12 @@ type Conn struct {
 
 	Uid string
 
+	messageMu      sync.Mutex
+	readMessage    []*Message
+	readMessageSeq map[string]*Message
+
+	message chan *Message
+
 	*websocket.Conn
 	s                 *Server
 	lastCommunication time.Time
@@ -29,6 +35,9 @@ func NewConnection(s *Server, w http.ResponseWriter, r *http.Request) *Conn {
 	conn := &Conn{
 		Conn:              c,
 		s:                 s,
+		readMessage:       make([]*Message, 0, 2),
+		readMessageSeq:    make(map[string]*Message, 2),
+		message:           make(chan *Message, 1),
 		lastCommunication: time.Now(),
 		MaxIdleTime:       s.serverOption.MaxIdleTime,
 		done:              make(chan struct{}),
@@ -36,6 +45,32 @@ func NewConnection(s *Server, w http.ResponseWriter, r *http.Request) *Conn {
 
 	go conn.keepAlive()
 	return conn
+}
+
+func (c *Conn) appendMsgMq(msg *Message) {
+	c.messageMu.Lock()
+	defer c.messageMu.Unlock()
+
+	if m, ok := c.readMessageSeq[msg.Id]; ok {
+		// 已经有消息的记录，该消息已经有ack的确认
+		if len(c.readMessage) == 0 {
+			// 队列中没有消息
+			return
+		}
+		if m.AckSeq >= msg.AckSeq {
+			return
+		}
+		c.readMessageSeq[msg.Id] = msg
+		return
+	}
+
+	if msg.FrameType == FrameAck {
+		return
+	}
+
+	c.readMessage = append(c.readMessage, msg)
+	c.readMessageSeq[msg.Id] = msg
+
 }
 
 func (c *Conn) ReadMessage() (int, []byte, error) {
