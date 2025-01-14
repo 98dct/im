@@ -1,0 +1,9 @@
+Name: im.rpc
+ListenOn: 0.0.0.0:8080
+Etcd:
+  Hosts:
+  - 192.168.8.100:3379
+  Key: im.rpc
+Mongo:
+  Url: "mongodb://root:root@192.168.8.100:27017"
+  Db: im-chat
