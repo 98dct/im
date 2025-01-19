@@ -11,5 +11,7 @@ type Config struct {
 		AccessSecret string
 	}
 
-	IMRpc zrpc.RpcClientConf
+	IMRpc     zrpc.RpcClientConf
+	SocialRpc zrpc.RpcClientConf
+	UserRpc   zrpc.RpcClientConf
 }

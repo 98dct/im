@@ -10,7 +10,7 @@ import (
 	"im/apps/im/ws/websocket"
 )
 
-var configFile = flag.String("f", "etc/dev/ws.yaml", "the config file")
+var configFile = flag.String("f", "etc/dev/im.yaml", "the config file")
 
 func main() {
 	flag.Parse()

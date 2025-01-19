@@ -10,6 +10,20 @@ MsgChatTransfer:
   Offset: first
   Consumers: 1
 
+MsgReadTransfer:
+  Name: MsgReadTransfer
+  Brokers:
+    - 192.168.8.100:9092
+  Group: kafka
+  Topic: msgReadTransfer
+  Offset: first
+  Consumers: 1
+
+MsgReadHandler:
+  GroupMsgReadHandler: 1
+  GroupMsgReadRecordDelayTime: 5
+  GroupMsgReadRecordDelayCount: 2
+
 Redisx:
     Host: 192.168.8.100:6379
     Type: node
@@ -19,5 +33,12 @@ Mongo:
   Db: im-chat
 
 Ws:
-  Host: 127.0.0.1:10090
+  Host: 192.168.8.100:10090
+
+SocialRpc:
+  Etcd:
+    Hosts:
+      - 192.168.8.100:3379
+    Key: social.rpc
+
   

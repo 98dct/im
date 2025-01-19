@@ -10,6 +10,8 @@ type serverOption struct {
 
 	pattern     string
 	MaxIdleTime time.Duration
+
+	concurrency int
 }
 
 type ServerOption func(option *serverOption)
@@ -20,6 +22,7 @@ func newServerOption(opts ...ServerOption) serverOption {
 		pattern:        "/ws",
 		MaxIdleTime:    defaultMaxIdleTime,
 		ackTimeout:     defaultAckTimeout,
+		concurrency:    defaultConcurrency,
 	}
 
 	for _, opt := range opts {

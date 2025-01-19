@@ -2,71 +2,66 @@ package msgTransfer
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/zeromicro/go-zero/core/logx"
-	"im/apps/im/immodels"
 	"im/apps/im/ws/websocket"
+	"im/apps/im/ws/ws"
+	"im/apps/social/rpc/socialclient"
 	"im/apps/task/mq/internal/svc"
-	"im/apps/task/mq/mq"
 	"im/pkg/constants"
 )
 
-type MsgChatTransfer struct {
-	logx.Logger
+type BaseMsgTransfer struct {
 	svc *svc.ServiceContext
+	logx.Logger
 }
 
-func NewMsgChatTransfer(svc *svc.ServiceContext) *MsgChatTransfer {
-	return &MsgChatTransfer{
-		Logger: logx.WithContext(context.Background()),
+func NewBaseMsgTransfer(svc *svc.ServiceContext) *BaseMsgTransfer {
+	return &BaseMsgTransfer{
 		svc:    svc,
+		Logger: logx.WithContext(context.Background()),
 	}
 }
 
-func (m *MsgChatTransfer) Consume(ctx context.Context, key, value string) error {
-	fmt.Println("key: ", key, "value: ", value)
-
-	var (
-		data mq.MsgChatTransfer
-	)
-	err := json.Unmarshal([]byte(value), &data)
-	if err != nil {
-		return err
+func (b *BaseMsgTransfer) Transfer(ctx context.Context, data *ws.Push) error {
+	var err error
+	switch data.ChatType {
+	case constants.SingleChatType:
+		err = b.single(ctx, data)
+	case constants.GroupChatType:
+		err = b.group(ctx, data)
 	}
 
-	// 存储聊天信息
-	if err := m.addChatLog(ctx, data); err != nil {
-		return err
-	}
+	return err
+}
 
-	// 推送消息
-	return m.svc.WsClient.Send(websocket.Message{
+func (b *BaseMsgTransfer) single(ctx context.Context, data *ws.Push) error {
+	return b.svc.WsClient.Send(websocket.Message{
 		FrameType: websocket.FrameData,
 		Method:    "push",
 		FromId:    constants.SYSTEM_ROOT_UID,
 		Data:      data,
 	})
-
 }
 
-func (m *MsgChatTransfer) addChatLog(ctx context.Context, data mq.MsgChatTransfer) error {
-	// 记录消息
-	msg := immodels.ChatLog{
-		ConversationId: data.ConversationId,
-		SendId:         data.SendId,
-		RecvId:         data.RecvId,
-		MsgFrom:        0,
-		ChatType:       data.ChatType,
-		MsgType:        data.MType,
-		MsgContent:     data.Content,
-		SendTime:       data.SendTime,
-	}
-
-	err := m.svc.ChatLogModel.Insert(ctx, &msg)
+func (b *BaseMsgTransfer) group(ctx context.Context, data *ws.Push) error {
+	// 根据群id查询所有的群用户
+	users, err := b.svc.Social.GroupUsers(ctx, &socialclient.GroupUsersReq{GroupId: data.RecvId})
 	if err != nil {
 		return err
 	}
 
-	return m.svc.ConversationModel.UpdateMsg(ctx, &msg)
+	data.RecvIds = make([]string, 0, len(users.List))
+	for _, members := range users.List {
+		if members.UserId == data.SendId {
+			continue
+		}
+		data.RecvIds = append(data.RecvIds, members.UserId)
+	}
+
+	return b.svc.WsClient.Send(websocket.Message{
+		FrameType: websocket.FrameData,
+		Method:    "push",
+		FromId:    constants.SYSTEM_ROOT_UID,
+		Data:      data,
+	})
 }

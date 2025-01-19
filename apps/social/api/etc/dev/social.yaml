@@ -8,7 +8,15 @@ SocialRpc:
     Hosts:
       - 192.168.8.100:3379
     Key: social.rpc
-
+ImRpc:
+  Etcd:
+    Hosts:
+      - 192.168.8.100:3379
+    Key: im.rpc
+Redisx:
+  Host: 192.168.8.100:6379
+  Type: node
+  Pass:
 UserRpc:
   Etcd:
     Hosts:

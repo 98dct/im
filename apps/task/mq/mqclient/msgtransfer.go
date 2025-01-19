@@ -26,3 +26,23 @@ func (m *msgChatTransferClient) Push(msg *mq.MsgChatTransfer) error {
 	}
 	return m.pusher.Push(context.Background(), string(bytes))
 }
+
+type MsgReadTransferClient interface {
+	Push(msg *mq.MsgMarkRead) error
+}
+
+type msgReadTransferClient struct {
+	pusher *kq.Pusher
+}
+
+func NewMsgReadTransferClient(addr []string, topic string, opts ...kq.PushOption) *msgReadTransferClient {
+	return &msgReadTransferClient{pusher: kq.NewPusher(addr, topic, opts...)}
+}
+
+func (m *msgReadTransferClient) Push(msg *mq.MsgMarkRead) error {
+	bytes, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	return m.pusher.Push(context.Background(), string(bytes))
+}

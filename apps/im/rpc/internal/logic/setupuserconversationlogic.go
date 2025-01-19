@@ -63,6 +63,11 @@ func (l *SetUpUserConversationLogic) SetUpUserConversation(in *im.SetUpUserConve
 		if err != nil {
 			return nil, err
 		}
+	case constants.GroupChatType:
+		err := l.setupUserConversation(in.RecvId, in.SendId, in.RecvId, constants.ChatType(in.ChatType), true)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &im.SetUpUserConversationResp{}, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jinzhu/copier"
 	"im/apps/user/rpc/user"
+	"im/pkg/constants"
 
 	"im/apps/user/api/internal/svc"
 	"im/apps/user/api/internal/types"
@@ -39,6 +40,8 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.LoginResp, err erro
 
 	var res types.LoginResp
 	copier.Copy(&res, loginResp)
+
+	l.svcCtx.Redis.HsetCtx(l.ctx, constants.REDIS_ONLINE_USER, loginResp.Id, "1")
 
 	return &res, nil
 }
