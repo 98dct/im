@@ -12,6 +12,8 @@ type serverOption struct {
 	MaxIdleTime time.Duration
 
 	concurrency int
+
+	discover Discover
 }
 
 type ServerOption func(option *serverOption)
@@ -67,5 +69,11 @@ func WithAckTimeout(ackTimeout time.Duration) ServerOption {
 		}
 
 		option.ackTimeout = ackTimeout
+	}
+}
+
+func WithServerDiscover(discover Discover) ServerOption {
+	return func(option *serverOption) {
+		option.discover = discover
 	}
 }

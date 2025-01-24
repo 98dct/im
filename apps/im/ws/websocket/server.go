@@ -34,6 +34,7 @@ type Server struct {
 	routes map[string]HandlerFunc
 	addr   string
 
+	ListenOn     string
 	serverOption serverOption
 
 	*threading.TaskRunner
@@ -47,10 +48,11 @@ type Server struct {
 
 func NewServer(addr string, opts ...ServerOption) *Server {
 	serverOption := newServerOption(opts...)
-	return &Server{
+	s := &Server{
 		routes: make(map[string]HandlerFunc),
 		addr:   addr,
 		//authentication: new(authentication),
+		ListenOn:     FigureOutListenOn(addr),
 		serverOption: serverOption,
 		TaskRunner:   threading.NewTaskRunner(serverOption.concurrency),
 		connToUser:   make(map[*Conn]string),
@@ -58,6 +60,9 @@ func NewServer(addr string, opts ...ServerOption) *Server {
 		upgrader:     websocket.Upgrader{},
 		Logger:       logx.WithContext(context.Background()),
 	}
+
+	s.serverOption.discover.Register(s.ListenOn)
+	return s
 }
 
 func (s *Server) ServeWs(w http.ResponseWriter, r *http.Request) {
@@ -92,6 +97,10 @@ func (s *Server) handlerConn(conn *Conn) {
 
 	uid := s.GetUser(conn)
 	conn.Uid = uid
+
+	// 服务注册
+	// 将用户id和当前im服务的地址注册到redis中 hash存储
+	s.serverOption.discover.BoundUser(conn.Uid)
 
 	go s.handlerWrite(conn)
 
@@ -132,7 +141,7 @@ func (s *Server) isAck(message *Message) bool {
 	if message == nil {
 		return s.serverOption.ack != NoAck
 	}
-	return s.serverOption.ack != NoAck && message.FrameType != FrameNoAck
+	return s.serverOption.ack != NoAck && message.FrameType != FrameNoAck && message.FrameType != FrameTranspond
 }
 
 func (s *Server) readAck(conn *Conn) {
@@ -270,18 +279,24 @@ func (s *Server) GetConn(uId string) *Conn {
 	return s.userToConn[uId]
 }
 
-func (s *Server) GetConns(uIds ...string) []*Conn {
+func (s *Server) GetConns(uIds ...string) ([]*Conn, []string) {
 	if len(uIds) == 0 {
-		return nil
+		return nil, nil
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	conns := make([]*Conn, 0, len(uIds))
+	var noExistUids []string
 	for _, uId := range uIds {
-		conns = append(conns, s.userToConn[uId])
+		c, ok := s.userToConn[uId]
+		if ok {
+			conns = append(conns, c)
+			continue
+		}
+		noExistUids = append(noExistUids, uId)
 	}
 
-	return conns
+	return conns, noExistUids
 }
 
 func (s *Server) GetUser(conn *Conn) string {
@@ -325,6 +340,8 @@ func (s *Server) Close(conn *Conn) {
 	delete(s.connToUser, conn)
 	delete(s.userToConn, uid)
 
+	s.serverOption.discover.RelieveUser(uid)
+
 	conn.Close()
 }
 
@@ -334,7 +351,13 @@ func (s *Server) SendByUserId(msg interface{}, uIds ...string) error {
 		return nil
 	}
 
-	return s.Send(msg, s.GetConns(uIds...)...)
+	conns, noExistUids := s.GetConns(uIds...)
+	err := s.Send(msg, conns...)
+	if err != nil {
+		return err
+	}
+
+	return s.serverOption.discover.Transpond(msg, noExistUids...)
 
 }
 

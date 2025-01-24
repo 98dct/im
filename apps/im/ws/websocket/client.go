@@ -10,6 +10,7 @@ type Client interface {
 	Close() error
 
 	Send(v interface{}) error
+	SendUid(v interface{}, uids ...string) error
 	Read(v interface{}) error
 }
 
@@ -18,6 +19,8 @@ type client struct {
 	host string
 
 	opt DialOption
+
+	Discover
 }
 
 func NewClient(host string, opt ...DialOptions) *client {
@@ -55,7 +58,7 @@ func (c *client) Send(v interface{}) error {
 		return err
 	}
 
-	err = c.WriteMessage(websocket.TextMessage, bytes)
+	err = c.Conn.WriteMessage(websocket.TextMessage, bytes)
 	if err == nil {
 		return nil
 	}
@@ -67,6 +70,13 @@ func (c *client) Send(v interface{}) error {
 	}
 	c.Conn = conn
 	return c.WriteMessage(websocket.TextMessage, bytes)
+}
+
+func (c *client) SendUid(v interface{}, uids ...string) error {
+	if c.Discover != nil {
+		return c.Discover.Transpond(v, uids...)
+	}
+	return c.Send(v)
 }
 
 func (c *client) Read(v interface{}) error {

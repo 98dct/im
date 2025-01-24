@@ -1,5 +1,6 @@
 package bitmap
 
+// 为减少hash碰撞，需要增加size的值，size * 8尽可能大于等于用户的数量
 type Bitmap struct {
 	bits []byte
 	size int
@@ -52,5 +53,6 @@ func hash(id string) int {
 	for _, c := range id {
 		hash = hash*seed + int(c)
 	}
+	// hash过程可能出现负数，这个操作保证生成一个正数
 	return hash & 0x7FFFFFFF
 }

@@ -36,7 +36,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 	header := http.Header{}
 	header.Set("Authorization", token)
-	svc.WsClient = websocketx.NewClient(c.Ws.Host, websocketx.WithHeader(header))
+	svc.WsClient = websocketx.NewClient(c.Ws.Host,
+		websocketx.WithHeader(header),
+		websocketx.WithDiscover(websocketx.NewRedisDiscover(header, constants.REDIS_DISCOVER_SRV, c.Redisx)),
+	)
 
 	return svc
 }

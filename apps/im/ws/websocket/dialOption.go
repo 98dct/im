@@ -7,6 +7,7 @@ type DialOptions func(option *DialOption)
 type DialOption struct {
 	Pattern string
 	header  http.Header
+	Discover
 }
 
 func NewDialOption(opts ...DialOptions) DialOption {
@@ -30,5 +31,11 @@ func WithPattern(pattern string) DialOptions {
 func WithHeader(header http.Header) DialOptions {
 	return func(option *DialOption) {
 		option.header = header
+	}
+}
+
+func WithDiscover(discover Discover) DialOptions {
+	return func(option *DialOption) {
+		option.Discover = discover
 	}
 }
